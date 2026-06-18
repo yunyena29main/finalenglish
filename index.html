@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yena's English Class - Tomato Challenge</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #e84040;
+    --green: #27ae60;
+    --yellow: #f9c846;
+    --bg: #fdf6ec;
+    --card: #ffffff;
+    --text: #2d2d2d;
+    --muted: #888;
+    --radius: 18px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.09);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+  }
+
+  .wrapper {
+    max-width: 720px;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--red);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    text-align: center;
+    color: white;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    width: 200px; height: 200px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 50%;
+    top: -60px; right: -40px;
+  }
+  .header h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2rem;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .header h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    opacity: 0.9;
+  }
+  .header p {
+    margin-top: 6px;
+    font-size: 0.95rem;
+    opacity: 0.8;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+  }
+  .card-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: var(--red);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title svg { flex-shrink: 0; }
+
+  /* FORM FIELDS */
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .field input,
+  .field select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #eee;
+    border-radius: 10px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: border 0.2s;
+    background: #fafafa;
+  }
+  .field input:focus,
+  .field select:focus {
+    border-color: var(--red);
+    background: white;
+  }
+
+  /* DIFFICULTY BUTTONS */
+  .diff-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .diff-btn {
+    flex: 1;
+    min-width: 90px;
+    padding: 10px 8px;
+    border: 2px solid #eee;
+    border-radius: 10px;
+    background: white;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    color: var(--text);
+  }
+  .diff-btn:hover { transform: translateY(-2px); }
+  .diff-btn.easy   { border-color: #27ae60; }
+  .diff-btn.easy.active   { background: #27ae60; color: white; }
+  .diff-btn.normal { border-color: #f9c846; }
+  .diff-btn.normal.active { background: #f9c846; color: #333; }
+  .diff-btn.hard   { border-color: #e84040; }
+  .diff-btn.hard.active   { background: #e84040; color: white; }
+  .level-label {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  /* PASSAGE */
+  .passage-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sentence {
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: #f5f5f5;
+    font-size: 1rem;
+    font-weight: 600;
+    border-left: 4px solid transparent;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .sentence.active {
+    background: #fff9db;
+    border-left-color: var(--yellow);
+  }
+  .sentence.done {
+    background: #e8f8ed;
+    border-left-color: var(--green);
+    color: #27ae60;
+  }
+
+  /* RECORD BUTTON */
+  .rec-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 0 4px;
+  }
+  #recBtn {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+    color: white;
+    background: var(--green);
+    box-shadow: 0 6px 30px rgba(39,174,96,0.35);
+    transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: relative;
+    outline: none;
+  }
+  #recBtn:active { transform: scale(0.96); }
+  #recBtn.listening {
+    background: var(--red);
+    box-shadow: 0 6px 30px rgba(232,64,64,0.4);
+    animation: pulse 1.2s infinite;
+  }
+  #recBtn.disabled {
+    background: #ccc;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(232,64,64,0.4); }
+    70%  { box-shadow: 0 0 0 20px rgba(232,64,64,0); }
+    100% { box-shadow: 0 0 0 0 rgba(232,64,64,0); }
+  }
+  #recBtn svg { width: 40px; height: 40px; }
+  #recBtnLabel { font-size: 0.95rem; }
+
+  /* RESULT */
+  #resultBox {
+    min-height: 56px;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    text-align: center;
+    background: #f5f5f5;
+    color: var(--muted);
+    transition: background 0.3s, color 0.3s;
+  }
+  #resultBox.correct {
+    background: #e8f8ed;
+    color: var(--green);
+  }
+  #resultBox.retry {
+    background: #fff3f3;
+    color: var(--red);
+  }
+
+  /* TOMATO COUNTER */
+  .tomato-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .tomato-label {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .tomato-icons span {
+    font-size: 1.5rem;
+    margin-right: 2px;
+    filter: grayscale(1);
+    transition: filter 0.3s;
+  }
+  .tomato-icons span.earned { filter: grayscale(0); }
+  .tomato-count {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: var(--red);
+    margin-left: auto;
+  }
+
+  /* VOICE METER */
+  .voice-track {
+    height: 14px;
+    background: #eee;
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  #voiceBar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #27ae60, #f9c846, #e84040);
+    border-radius: 99px;
+    transition: width 0.05s linear;
+  }
+  canvas {
+    width: 100%;
+    height: 80px;
+    display: block;
+    border-radius: 10px;
+    background: #f5f5f5;
+    margin-top: 10px;
+  }
+
+  /* COMPLETE BANNER */
+  .banner {
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    text-align: center;
+    display: none;
+  }
+  .banner.show { display: block; }
+  .banner-round {
+    background: linear-gradient(135deg, #fff8d6, #fff3a0);
+    border: 3px solid var(--yellow);
+  }
+  .banner-master {
+    background: linear-gradient(135deg, #fff0f0, #ffe0e0);
+    border: 3px solid var(--red);
+  }
+  .banner h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+  }
+  .banner h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .banner-btn {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 12px 28px;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .banner-btn:hover { transform: scale(1.04); }
+
+  /* REFLECTION */
+  .reflect-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .reflect-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 0.97rem;
+  }
+  .reflect-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--red);
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>Yena's English Class</h1>
+    <h2>Tomato Challenge</h2>
+    <p>Read, Speak, and Shine!</p>
+  </div>
+
+  <!-- SETUP CARD -->
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Setup
+    </div>
+    <div class="field">
+      <label>Student Name</label>
+      <input id="studentName" placeholder="Enter your name">
+    </div>
+    <div class="field">
+      <label>Round</label>
+      <select id="round">
+        <option value="joe">Round 1 - Joe (Unlocked)</option>
+        <option value="mai" disabled>Round 2 - Mai (Locked)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Difficulty</label>
+      <div class="diff-group">
+        <button class="diff-btn easy active" onclick="setDifficulty('easy')">Easy</button>
+        <button class="diff-btn normal" onclick="setDifficulty('normal')">Normal</button>
+        <button class="diff-btn hard"   onclick="setDifficulty('hard')">Hard</button>
+      </div>
+      <div class="level-label" id="levelLabel">Level: EASY (30% match required)</div>
+      <button id="nextBtn" onclick="nextSentence()" style="margin-top:10px;padding:10px 20px;border:none;border-radius:10px;background:#27ae60;color:white;font-weight:bold;cursor:pointer;">
+      🍅 Next
+      </button>
+
+    </div>
+  </div>
+
+  <!-- PASSAGE CARD -->
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 10h16M4 14h10"/></svg>
+      Passage
+    </div>
+    <div class="passage-list" id="passage"></div>
+  </div>
+
+  <!-- RECORD CARD -->
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>
+      Speak
+    </div>
+    <div class="rec-wrap">
+      <button id="recBtn" onclick="toggleRec()">
+        <svg id="recIcon" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>
+        <span id="recBtnLabel">Speak</span>
+      </button>
+      <div id="resultBox">Ready! Tap the button and read the highlighted sentence.</div>
+      <button id="skipBtn" onclick="manualPass()" style="display:none;margin-top:10px;padding:10px 20px;border:none;border-radius:10px;background:#27ae60;color:white;font-weight:bold;cursor:pointer;">🍅 I Read It!</button>
+    </div>
+  </div>
+
+  <!-- TOMATOES CARD -->
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="13" r="8"/><path d="M12 5V3M9 5c0-1.5 1-3 3-3s3 1.5 3 3"/></svg>
+      Team Tomatoes
+    </div>
+    <div class="tomato-row">
+      <span class="tomato-label">Earned</span>
+    <div class="tomato-icons" id="tomatoIcons"></div>
+
+<span class="tomato-count" id="tomatoCount">0 / 5</span>
+    </div>
+    <p style="margin-top:10px;font-size:0.88rem;color:var(--muted);">Help your teammates — everyone earns tomatoes for the team!</p>
+  </div>
+
+  <!-- VOICE METER CARD -->
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 12 6 4 10 18 14 8 18 14 22 12"/></svg>
+      Voice Meter
+    </div>
+    <div class="voice-track"><div id="voiceBar"></div></div>
+    <canvas id="voiceCanvas"></canvas>
+  </div>
+
+  <!-- COMPLETE BANNER (Round 1) -->
+  <div class="banner banner-round" id="bannerRound1">
+    <h1>Round 1 Complete!</h1>
+    <h2>Round 2 - Mai is now unlocked!</h2>
+    <button class="banner-btn" onclick="goRound2()">Go to Round 2</button>
+  </div>
+
+  <!-- COMPLETE BANNER (Master & Level Up) -->
+  <div class="banner banner-master" id="bannerMaster">
+    <h1>Tomato Master! 👑</h1>
+    <h2>Level Up to NORMAL Mode!</h2>
+    <p style="font-size:1rem; margin-bottom: 15px;">You crushed Easy mode! Ready to practice with Normal mode?</p>
+    <button class="banner-btn" onclick="restartInNormalMode()">Practice in Normal Mode 🍅</button>
+  </div>
+
+  <!-- REFLECTION CARD -->
+  <div class="card">
+    <div class="card-title">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      Reflection
+    </div>
+    <ul class="reflect-list">
+      <li><span class="reflect-dot"></span>Did I help my friends learn today?</li>
+      <li><span class="reflect-dot"></span>Was I a good Tomato Coach?</li>
+      <li><span class="reflect-dot"></span>What sentence was hardest for me?</li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+const keywords = {
+  joe: [
+    ["joe"],
+    ["like"],
+    ["love"],
+    ["summer"],
+    ["fun"]
+  ],
+
+  mai: [
+    ["mai"],
+    ["sports"],
+    ["basketball"],
+    ["camp"],
+    ["fun"]
+  ]
+};
+
+const passages = {
+  joe: [
+    "visit my grandpa",
+    "read many books",
+    "I'll learn taekwondo",
+    "I'll go camping",
+    "What will you do this summer"
+  ],
+  mai: [
+    "I'll go to the beach",
+    "I'll grow tomatoes",
+    "I'll go shopping",
+    "I'll join a science camp",
+    "What will you do this summer"
+  ]
+};
+
+let recognition;
+let tomatoCount = 0;
+let currentIndex = 0;
+let threshold = 0.3; // 기본값을 Easy(0.3)로 세팅
+let round1Complete = false;
+let isListening = false;
+
+let audioContext, analyser, microphone, dataArray;
+
+// ── Difficulty ──────────────────────────────────────────────
+function setDifficulty(level) {
+  if (level === 'easy')   threshold = 0.3;
+  else if (level === 'normal') threshold = 0.5;
+  else                    threshold = 0.7;
+  document.getElementById('levelLabel').textContent =
+    'Level: ' + level.toUpperCase() + ' (' + (threshold * 100) + '% match required)';
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.diff-btn.' + level).classList.add('active');
+}
+
+// ── Render passage ───────────────────────────────────────────
+function render() {
+  const round = document.getElementById('round').value;
+  document.getElementById('passage').innerHTML =
+    passages[round].map((s, i) =>
+      '<div class="sentence" id="sent-' + i + '">' + (i + 1) + '. ' + s + '</div>'
+    ).join('');
+  currentIndex = 0;
+  highlightCurrent();
+  setResultBox('neutral', 'Ready! Tap the button and read the highlighted sentence.');
+}
+
+function highlightCurrent() {
+  const round = document.getElementById('round').value;
+  passages[round].forEach((_, i) => {
+    const el = document.getElementById('sent-' + i);
+    if (!el) return;
+    el.className = 'sentence' + (i === currentIndex ? ' active' : (i < currentIndex ? ' done' : ''));
+  });
+}
+
+// ── Similarity ───────────────────────────────────────────────
+function similarity(a, b) {
+  const aw = a.split(' ');
+  const bw = b.split(' ');
+  let match = 0;
+  aw.forEach(w => { if (bw.includes(w)) match++; });
+  return match / aw.length;
+}
+
+// ── Result box helper ────────────────────────────────────────
+function setResultBox(state, text) {
+  const box = document.getElementById('resultBox');
+  box.className = '';
+  if (state === 'correct') box.classList.add('correct');
+  if (state === 'retry')   box.classList.add('retry');
+  box.textContent = text;
+}
+
+// ── Tomato icons ─────────────────────────────────────────────
+function updateTomatoes() {
+  const total = passages[document.getElementById('round').value].length;
+
+  const icons = document.getElementById('tomatoIcons');
+  icons.innerHTML = '';
+
+  for(let i = 0; i < total; i++) {
+    const tomato = document.createElement('span');
+    tomato.textContent = '🍅';
+
+    if(i < tomatoCount){
+      tomato.classList.add('earned');
+    }
+
+    icons.appendChild(tomato);
+  }
+
+  document.getElementById('tomatoCount').textContent =
+    tomatoCount + ' / ' + total;
+}
+
+// ── Button state ─────────────────────────────────────────────
+function setRecBtn(state) {
+  const btn = document.getElementById('recBtn');
+  const label = document.getElementById('recBtnLabel');
+  btn.className = '';
+  if (state === 'idle') {
+    btn.classList.add('');
+    label.textContent = 'Speak';
+    isListening = false;
+  } else if (state === 'listening') {
+    btn.classList.add('listening');
+    label.textContent = 'Listening...';
+    isListening = true;
+  } else if (state === 'disabled') {
+    btn.classList.add('disabled');
+    label.textContent = 'Done';
+  }
+}
+
+// ── Toggle record (single button) ────────────────────────────
+async function toggleRec() {
+  if (document.getElementById('recBtn').classList.contains('disabled')) return;
+
+  if (!audioContext) await setupVoice();
+
+  if (!isListening) {
+    try {
+      recognition.start();
+      setRecBtn('listening');
+      setResultBox('neutral', 'Listening... speak now!');
+    } catch (e) {
+      console.log(e);
+      
+  isListening = false;
+
+  try {
+    recognition.stop();
+  } catch {}
+
+  setRecBtn('idle');
+    }
+  } else {
+    recognition.stop();
+    setRecBtn('idle');
+  }
+}
+
+// ── Speech recognition setup ─────────────────────────────────
+document.getElementById('round').addEventListener('change', render);
+render();
+
+if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+recognition.onresult = function(e) {
+  const spoken = e.results[0][0].transcript.toLowerCase().replace(/[.,!?]/g, '').trim();
+ 
+  const round  = document.getElementById('round').value;
+
+  const success = spoken.length > 0;
+
+  document.getElementById('skipBtn').style.display = 'none';
+
+  if (success) {
+      document.getElementById('sent-' + currentIndex).className = 'sentence done';
+      currentIndex++;
+   tomatoCount++;
+      updateTomatoes();
+
+    highlightCurrent();
+
+
+    recognition.stop();
+    isListening = false;
+
+      if (currentIndex >= passages[round].length) {
+        // Round complete
+        if (round === 'joe' && !round1Complete) {
+          round1Complete = true;
+          const sel = document.getElementById('round');
+          sel.options[1].disabled = false;
+          sel.options[1].text = 'Round 2 - Mai (Unlocked)';
+          document.getElementById('bannerRound1').classList.add('show');
+          setRecBtn('disabled');
+          setResultBox('correct', 'Round 1 complete! Great job!');
+        } else {
+          document.getElementById('bannerMaster').classList.add('show');
+          setRecBtn('disabled');
+          setResultBox('correct', 'Level Up! You are a Tomato Master!');
+        }
+      } else {
+        setResultBox(
+  'correct',
+  'Great job! 🍅 You earned a tomato!'
+);
+      }
+    } else {
+     setResultBox(
+  'retry',
+  'Try again! Read a little louder.'
+);
+    }
+
+    // always reset button after result
+  isListening = false; 
+  setRecBtn('idle');
+  };
+
+  // reset button if recognition ends for any reason (timeout, error, etc.)
+  recognition.onend = function() {
+
+  isListening = false;
+  setRecBtn('idle');
+
+  if (
+      currentIndex <
+      passages[document.getElementById('round').value].length
+     ) {
+
+      document.getElementById('skipBtn').style.display =
+      'inline-block';
+  }
+  };
+
+  recognition.onerror = function(e) {
+
+    const sb = document.getElementById('skipBtn');
+    if (sb) sb.style.display = 'inline-block';
+
+    isListening = false;
+
+try {
+  recognition.stop();
+} catch {}
+    
+    setRecBtn('idle');
+    if (e.error !== 'no-speech') {
+      setResultBox('retry', 'Mic error: ' + e.error + '. Please try again.');
+    } else {
+      setResultBox('neutral', 'No speech detected. Tap Speak and try again!');
+    }
+  };
+}
+
+
+function manualPass() {
+
+  const round = document.getElementById('round').value;
+
+  document.getElementById('skipBtn').style.display = 'none';
+
+  document.getElementById('sent-' + currentIndex).className = 'sentence done';
+
+  currentIndex++;
+  tomatoCount++;
+
+  updateTomatoes();
+  highlightCurrent();
+
+  if (currentIndex >= passages[round].length) {
+
+    if (round === 'joe' && !round1Complete) {
+
+      round1Complete = true;
+
+      const sel = document.getElementById('round');
+      sel.options[1].disabled = false;
+      sel.options[1].text = 'Round 2 - Mai (Unlocked)';
+
+      document.getElementById('bannerRound1').classList.add('show');
+
+      setRecBtn('disabled');
+      setResultBox('correct', 'Round 1 complete! Great job!');
+
+    } else {
+
+      document.getElementById('bannerMaster').classList.add('show');
+
+      setRecBtn('disabled');
+      setResultBox('correct', 'Level Up! You are a Tomato Master!');
+    }
+
+  } else {
+
+    setResultBox(
+      'correct',
+      'Great job! 🍅 You earned a tomato!'
+    );
+  }
+}
+
+
+function nextSentence() {
+  const round = document.getElementById('round').value;
+
+  if (currentIndex < passages[round].length) {
+    document.getElementById('sent-' + currentIndex).className = 'sentence done';
+    currentIndex++;
+    tomatoCount++;
+    updateTomatoes();
+    highlightCurrent();
+
+    if (currentIndex >= passages[round].length) {
+      if (round === 'joe' && !round1Complete) {
+        round1Complete = true;
+        const sel = document.getElementById('round');
+        sel.options[1].disabled = false;
+        sel.options[1].text = 'Round 2 - Mai (Unlocked)';
+        document.getElementById('bannerRound1').classList.add('show');
+      } else {
+        document.getElementById('bannerMaster').classList.add('show');
+      }
+    }
+  }
+}
+
+
+// ── Go to Round 2 ────────────────────────────────────────────
+function goRound2() {
+  document.getElementById('round').value = 'mai';
+  document.getElementById('bannerRound1').classList.remove('show');
+  tomatoCount = 0;
+  updateTomatoes();
+  render();
+  setRecBtn('idle');
+}
+
+// ── Normal 모드로 재도전하는 기능 추가 ───────────────────────────
+function restartInNormalMode() {
+  // 1. 배너 숨기기
+  document.getElementById('bannerMaster').classList.remove('show');
+  
+  // 2. 난이도를 Normal로 변경
+  setDifficulty('normal');
+  
+  // 3. 라운드를 다시 Joe(Round 1)로 변경
+  document.getElementById('round').value = 'joe';
+  
+  // 4. 상태 변수 초기화
+  tomatoCount = 0;
+  round1Complete = false;
+  
+  // 5. 셀렉트 박스 텍스트 복구 및 Mai 잠금처리
+  const sel = document.getElementById('round');
+  sel.options[1].disabled = true;
+  sel.options[1].text = 'Round 2 - Mai (Locked)';
+  
+  // 6. 화면 다시 그리기
+  updateTomatoes();
+  render();
+  setRecBtn('idle');
+}
+
+// ── Voice visualizer ─────────────────────────────────────────
+async function setupVoice() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  audioContext = new AudioContext();
+  analyser = audioContext.createAnalyser();
+  microphone = audioContext.createMediaStreamSource(stream);
+  microphone.connect(analyser);
+  analyser.fftSize = 256;
+  dataArray = new Uint8Array(analyser.frequencyBinCount);
+  drawVoice();
+}
+
+function drawVoice() {
+  requestAnimationFrame(drawVoice);
+  if (!analyser) return;
+  analyser.getByteFrequencyData(dataArray);
+
+  let avg = 0;
+  for (let i = 0; i < dataArray.length; i++) avg += dataArray[i];
+  avg /= dataArray.length;
+  document.getElementById('voiceBar').style.width = Math.min(100, avg * 2) + '%';
+
+  const canvas = document.getElementById('voiceCanvas');
+  // match display size
+  canvas.width  = canvas.offsetWidth;
+  canvas.height = 80;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = '#e84040';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < dataArray.length; i++) {
+    const x = i * (canvas.width / dataArray.length);
+    const y = canvas.height - (dataArray[i] / 255) * canvas.height;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+}
+
+// init tomato display
+updateTomatoes();
+</script>
+</body>
+</html>
