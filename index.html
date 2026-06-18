@@ -365,14 +365,12 @@
 <body>
 <div class="wrapper">
 
-  <!-- HEADER -->
   <div class="header">
     <h1>Yena's English Class</h1>
     <h2>Tomato Challenge</h2>
     <p>Read, Speak, and Shine!</p>
   </div>
 
-  <!-- SETUP CARD -->
   <div class="card">
     <div class="card-title">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
@@ -404,7 +402,6 @@
     </div>
   </div>
 
-  <!-- PASSAGE CARD -->
   <div class="card">
     <div class="card-title">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 10h16M4 14h10"/></svg>
@@ -413,7 +410,6 @@
     <div class="passage-list" id="passage"></div>
   </div>
 
-  <!-- RECORD CARD -->
   <div class="card">
     <div class="card-title">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0014 0M12 19v3M9 22h6"/></svg>
@@ -429,7 +425,6 @@
     </div>
   </div>
 
-  <!-- TOMATOES CARD -->
   <div class="card">
     <div class="card-title">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="13" r="8"/><path d="M12 5V3M9 5c0-1.5 1-3 3-3s3 1.5 3 3"/></svg>
@@ -444,7 +439,6 @@
     <p style="margin-top:10px;font-size:0.88rem;color:var(--muted);">Help your teammates — everyone earns tomatoes for the team!</p>
   </div>
 
-  <!-- VOICE METER CARD -->
   <div class="card">
     <div class="card-title">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 12 6 4 10 18 14 8 18 14 22 12"/></svg>
@@ -454,22 +448,19 @@
     <canvas id="voiceCanvas"></canvas>
   </div>
 
-  <!-- COMPLETE BANNER (Round 1) -->
   <div class="banner banner-round" id="bannerRound1">
     <h1>Round 1 Complete!</h1>
     <h2>Round 2 - Mai is now unlocked!</h2>
     <button class="banner-btn" onclick="goRound2()">Go to Round 2</button>
   </div>
 
-  <!-- COMPLETE BANNER (Master & Level Up) -->
   <div class="banner banner-master" id="bannerMaster">
-    <h1>Tomato Master! 👑</h1>
-    <h2>Level Up to NORMAL Mode!</h2>
-    <p style="font-size:1rem; margin-bottom: 15px;">You crushed Easy mode! Ready to practice with Normal mode?</p>
-    <button class="banner-btn" onclick="restartInNormalMode()">Practice in Normal Mode 🍅</button>
+    <h1 id="masterTitle">Tomato Master! 👑</h1>
+    <h2 id="masterSub">Level Up to NORMAL Mode!</h2>
+    <p id="masterDesc" style="font-size:1rem; margin-bottom: 15px;">You crushed Easy mode! Ready to practice with Normal mode?</p>
+    <button id="masterBtn" class="banner-btn" onclick="handleMasterAction()">Next Challenge 🍅</button>
   </div>
 
-  <!-- REFLECTION CARD -->
   <div class="card">
     <div class="card-title">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
@@ -487,19 +478,10 @@
 <script>
 const keywords = {
   joe: [
-    ["joe"],
-    ["like"],
-    ["love"],
-    ["summer"],
-    ["fun"]
+    ["joe"], ["like"], ["love"], ["summer"], ["fun"]
   ],
-
   mai: [
-    ["mai"],
-    ["sports"],
-    ["basketball"],
-    ["camp"],
-    ["fun"]
+    ["mai"], ["sports"], ["basketball"], ["camp"], ["fun"]
   ]
 };
 
@@ -523,7 +505,8 @@ const passages = {
 let recognition;
 let tomatoCount = 0;
 let currentIndex = 0;
-let threshold = 0.3; // 기본값을 Easy(0.3)로 세팅
+let threshold = 0.3; // 기본값 Easy
+let currentStageMode = 'easy'; // 현재 진행 중인 스테이지 모드 기록 ('easy', 'normal', 'hard')
 let round1Complete = false;
 let isListening = false;
 
@@ -531,9 +514,10 @@ let audioContext, analyser, microphone, dataArray;
 
 // ── Difficulty ──────────────────────────────────────────────
 function setDifficulty(level) {
-  if (level === 'easy')   threshold = 0.3;
-  else if (level === 'normal') threshold = 0.5;
-  else                    threshold = 0.7;
+  if (level === 'easy')   { threshold = 0.3; currentStageMode = 'easy'; }
+  else if (level === 'normal') { threshold = 0.5; currentStageMode = 'normal'; }
+  else                    { threshold = 0.7; currentStageMode = 'hard'; }
+  
   document.getElementById('levelLabel').textContent =
     'Level: ' + level.toUpperCase() + ' (' + (threshold * 100) + '% match required)';
   document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
@@ -582,23 +566,18 @@ function setResultBox(state, text) {
 // ── Tomato icons ─────────────────────────────────────────────
 function updateTomatoes() {
   const total = passages[document.getElementById('round').value].length;
-
   const icons = document.getElementById('tomatoIcons');
   icons.innerHTML = '';
 
   for(let i = 0; i < total; i++) {
     const tomato = document.createElement('span');
     tomato.textContent = '🍅';
-
     if(i < tomatoCount){
       tomato.classList.add('earned');
     }
-
     icons.appendChild(tomato);
   }
-
-  document.getElementById('tomatoCount').textContent =
-    tomatoCount + ' / ' + total;
+  document.getElementById('tomatoCount').textContent = tomatoCount + ' / ' + total;
 }
 
 // ── Button state ─────────────────────────────────────────────
@@ -607,7 +586,6 @@ function setRecBtn(state) {
   const label = document.getElementById('recBtnLabel');
   btn.className = '';
   if (state === 'idle') {
-    btn.classList.add('');
     label.textContent = 'Speak';
     isListening = false;
   } else if (state === 'listening') {
@@ -623,7 +601,6 @@ function setRecBtn(state) {
 // ── Toggle record (single button) ────────────────────────────
 async function toggleRec() {
   if (document.getElementById('recBtn').classList.contains('disabled')) return;
-
   if (!audioContext) await setupVoice();
 
   if (!isListening) {
@@ -632,15 +609,9 @@ async function toggleRec() {
       setRecBtn('listening');
       setResultBox('neutral', 'Listening... speak now!');
     } catch (e) {
-      console.log(e);
-      
-  isListening = false;
-
-  try {
-    recognition.stop();
-  } catch {}
-
-  setRecBtn('idle');
+      isListening = false;
+      try { recognition.stop(); } catch {}
+      setRecBtn('idle');
     }
   } else {
     recognition.stop();
@@ -659,87 +630,46 @@ if (window.SpeechRecognition || window.webkitSpeechRecognition) {
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 
-recognition.onresult = function(e) {
-  const spoken = e.results[0][0].transcript.toLowerCase().replace(/[.,!?]/g, '').trim();
- 
-  const round  = document.getElementById('round').value;
+  recognition.onresult = function(e) {
+    const spoken = e.results[0][0].transcript.toLowerCase().replace(/[.,!?]/g, '').trim();
+    const round  = document.getElementById('round').value;
+    const success = spoken.length > 0;
 
-  const success = spoken.length > 0;
+    document.getElementById('skipBtn').style.display = 'none';
 
-  document.getElementById('skipBtn').style.display = 'none';
-
-  if (success) {
+    if (success) {
       document.getElementById('sent-' + currentIndex).className = 'sentence done';
       currentIndex++;
-   tomatoCount++;
+      tomatoCount++;
       updateTomatoes();
-
-    highlightCurrent();
-
-
-    recognition.stop();
-    isListening = false;
+      highlightCurrent();
+      recognition.stop();
+      isListening = false;
 
       if (currentIndex >= passages[round].length) {
-        // Round complete
-        if (round === 'joe' && !round1Complete) {
-          round1Complete = true;
-          const sel = document.getElementById('round');
-          sel.options[1].disabled = false;
-          sel.options[1].text = 'Round 2 - Mai (Unlocked)';
-          document.getElementById('bannerRound1').classList.add('show');
-          setRecBtn('disabled');
-          setResultBox('correct', 'Round 1 complete! Great job!');
-        } else {
-          document.getElementById('bannerMaster').classList.add('show');
-          setRecBtn('disabled');
-          setResultBox('correct', 'Level Up! You are a Tomato Master!');
-        }
+        handleRoundOrMasterComplete(round);
       } else {
-        setResultBox(
-  'correct',
-  'Great job! 🍅 You earned a tomato!'
-);
+        setResultBox('correct', 'Great job! 🍅 You earned a tomato!');
       }
     } else {
-     setResultBox(
-  'retry',
-  'Try again! Read a little louder.'
-);
+      setResultBox('retry', 'Try again! Read a little louder.');
     }
-
-    // always reset button after result
-  isListening = false; 
-  setRecBtn('idle');
+    isListening = false; 
+    setRecBtn('idle');
   };
 
-  // reset button if recognition ends for any reason (timeout, error, etc.)
   recognition.onend = function() {
-
-  isListening = false;
-  setRecBtn('idle');
-
-  if (
-      currentIndex <
-      passages[document.getElementById('round').value].length
-     ) {
-
-      document.getElementById('skipBtn').style.display =
-      'inline-block';
-  }
+    isListening = false;
+    setRecBtn('idle');
+    if (currentIndex < passages[document.getElementById('round').value].length) {
+      document.getElementById('skipBtn').style.display = 'inline-block';
+    }
   };
 
   recognition.onerror = function(e) {
-
-    const sb = document.getElementById('skipBtn');
-    if (sb) sb.style.display = 'inline-block';
-
+    if (document.getElementById('skipBtn')) document.getElementById('skipBtn').style.display = 'inline-block';
     isListening = false;
-
-try {
-  recognition.stop();
-} catch {}
-    
+    try { recognition.stop(); } catch {}
     setRecBtn('idle');
     if (e.error !== 'no-speech') {
       setResultBox('retry', 'Mic error: ' + e.error + '. Please try again.');
@@ -749,57 +679,24 @@ try {
   };
 }
 
-
 function manualPass() {
-
   const round = document.getElementById('round').value;
-
   document.getElementById('skipBtn').style.display = 'none';
-
   document.getElementById('sent-' + currentIndex).className = 'sentence done';
-
   currentIndex++;
   tomatoCount++;
-
   updateTomatoes();
   highlightCurrent();
 
   if (currentIndex >= passages[round].length) {
-
-    if (round === 'joe' && !round1Complete) {
-
-      round1Complete = true;
-
-      const sel = document.getElementById('round');
-      sel.options[1].disabled = false;
-      sel.options[1].text = 'Round 2 - Mai (Unlocked)';
-
-      document.getElementById('bannerRound1').classList.add('show');
-
-      setRecBtn('disabled');
-      setResultBox('correct', 'Round 1 complete! Great job!');
-
-    } else {
-
-      document.getElementById('bannerMaster').classList.add('show');
-
-      setRecBtn('disabled');
-      setResultBox('correct', 'Level Up! You are a Tomato Master!');
-    }
-
+    handleRoundOrMasterComplete(round);
   } else {
-
-    setResultBox(
-      'correct',
-      'Great job! 🍅 You earned a tomato!'
-    );
+    setResultBox('correct', 'Great job! 🍅 You earned a tomato!');
   }
 }
 
-
 function nextSentence() {
   const round = document.getElementById('round').value;
-
   if (currentIndex < passages[round].length) {
     document.getElementById('sent-' + currentIndex).className = 'sentence done';
     currentIndex++;
@@ -808,19 +705,46 @@ function nextSentence() {
     highlightCurrent();
 
     if (currentIndex >= passages[round].length) {
-      if (round === 'joe' && !round1Complete) {
-        round1Complete = true;
-        const sel = document.getElementById('round');
-        sel.options[1].disabled = false;
-        sel.options[1].text = 'Round 2 - Mai (Unlocked)';
-        document.getElementById('bannerRound1').classList.add('show');
-      } else {
-        document.getElementById('bannerMaster').classList.add('show');
-      }
+      handleRoundOrMasterComplete(round);
     }
   }
 }
 
+// ── 라운드 완료 및 가변 배너 처리 함수 ───────────────────────────
+function handleRoundOrMasterComplete(round) {
+  if (round === 'joe' && !round1Complete) {
+    round1Complete = true;
+    const sel = document.getElementById('round');
+    sel.options[1].disabled = false;
+    sel.options[1].text = 'Round 2 - Mai (Unlocked)';
+    document.getElementById('bannerRound1').classList.add('show');
+    setRecBtn('disabled');
+    setResultBox('correct', 'Round 1 complete! Great job!');
+  } else {
+    // Round 2 (Mai)까지 다 깬 상황 (즉, 해당 난이도 마스터)
+    setRecBtn('disabled');
+    const banner = document.getElementById('bannerMaster');
+    
+    if (currentStageMode === 'easy') {
+      document.getElementById('masterTitle').textContent = "Easy Master! 👑";
+      document.getElementById('masterSub').textContent = "Level Up to NORMAL Mode!";
+      document.getElementById('masterDesc').textContent = "You crushed Easy mode! Ready to practice with Normal mode?";
+      setResultBox('correct', 'Level Up! Ready for Normal Mode!');
+    } else if (currentStageMode === 'normal') {
+      document.getElementById('masterTitle').textContent = "Normal Master! 🔥";
+      document.getElementById('masterSub').textContent = "Level Up to HARD Mode!";
+      document.getElementById('masterDesc').textContent = "Fantastic! You are ready for the Ultimate Hard Mode!";
+      setResultBox('correct', 'Level Up! Ready for Hard Mode!');
+    } else if (currentStageMode === 'hard') {
+      document.getElementById('masterTitle').textContent = "🍅 Tomato Ultimate Master! 🍅";
+      document.getElementById('masterSub').textContent = "🎉 축하합니다! 모든 난이도를 통과했습니다! 🎉";
+      document.getElementById('masterDesc').textContent = "Easy, Normal, Hard 모드까지 완벽하게 정복해 최고의 토마토 코치가 되었어요!";
+      document.getElementById('masterBtn').style.display = 'none'; // 마지막엔 버튼 감춤
+      setResultBox('correct', '★ Perfect Victory! All Stages Cleared! ★');
+    }
+    banner.classList.add('show');
+  }
+}
 
 // ── Go to Round 2 ────────────────────────────────────────────
 function goRound2() {
@@ -832,27 +756,25 @@ function goRound2() {
   setRecBtn('idle');
 }
 
-// ── Normal 모드로 재도전하는 기능 추가 ───────────────────────────
-function restartInNormalMode() {
-  // 1. 배너 숨기기
+// ── 모드 변경 및 스테이지 재시작 공통 처리 ───────────────────────
+function handleMasterAction() {
   document.getElementById('bannerMaster').classList.remove('show');
   
-  // 2. 난이도를 Normal로 변경
-  setDifficulty('normal');
-  
-  // 3. 라운드를 다시 Joe(Round 1)로 변경
+  if (currentStageMode === 'easy') {
+    setDifficulty('normal');
+  } else if (currentStageMode === 'normal') {
+    setDifficulty('hard');
+  }
+
+  // 게임 상태 첫 라운드로 초기화
   document.getElementById('round').value = 'joe';
-  
-  // 4. 상태 변수 초기화
   tomatoCount = 0;
   round1Complete = false;
   
-  // 5. 셀렉트 박스 텍스트 복구 및 Mai 잠금처리
   const sel = document.getElementById('round');
   sel.options[1].disabled = true;
   sel.options[1].text = 'Round 2 - Mai (Locked)';
   
-  // 6. 화면 다시 그리기
   updateTomatoes();
   render();
   setRecBtn('idle');
@@ -881,7 +803,6 @@ function drawVoice() {
   document.getElementById('voiceBar').style.width = Math.min(100, avg * 2) + '%';
 
   const canvas = document.getElementById('voiceCanvas');
-  // match display size
   canvas.width  = canvas.offsetWidth;
   canvas.height = 80;
   const ctx = canvas.getContext('2d');
@@ -897,7 +818,6 @@ function drawVoice() {
   ctx.stroke();
 }
 
-// init tomato display
 updateTomatoes();
 </script>
 </body>
