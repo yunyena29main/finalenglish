@@ -395,10 +395,6 @@
         <button class="diff-btn hard"   onclick="setDifficulty('hard')">Hard</button>
       </div>
       <div class="level-label" id="levelLabel">Level: EASY (30% match required)</div>
-      <button id="nextBtn" onclick="nextSentence()" style="margin-top:10px;padding:10px 20px;border:none;border-radius:10px;background:#27ae60;color:white;font-weight:bold;cursor:pointer;">
-      🍅 Next
-      </button>
-
     </div>
   </div>
 
@@ -432,9 +428,8 @@
     </div>
     <div class="tomato-row">
       <span class="tomato-label">Earned</span>
-    <div class="tomato-icons" id="tomatoIcons"></div>
-
-<span class="tomato-count" id="tomatoCount">0 / 5</span>
+      <div class="tomato-icons" id="tomatoIcons"></div>
+      <span class="tomato-count" id="tomatoCount">0 / 5</span>
     </div>
     <p style="margin-top:10px;font-size:0.88rem;color:var(--muted);">Help your teammates — everyone earns tomatoes for the team!</p>
   </div>
@@ -476,15 +471,6 @@
 </div>
 
 <script>
-const keywords = {
-  joe: [
-    ["joe"], ["like"], ["love"], ["summer"], ["fun"]
-  ],
-  mai: [
-    ["mai"], ["sports"], ["basketball"], ["camp"], ["fun"]
-  ]
-};
-
 const passages = {
   joe: [
     "Hi my name is Joe",
@@ -505,10 +491,11 @@ const passages = {
 let recognition;
 let tomatoCount = 0;
 let currentIndex = 0;
-let threshold = 0.3; // 기본값 Easy
-let currentStageMode = 'easy'; // 현재 진행 중인 스테이지 모드 기록 ('easy', 'normal', 'hard')
+let threshold = 0.3; 
+let currentStageMode = 'easy';
 let round1Complete = false;
 let isListening = false;
+let hasResultDisplay = false; // 일치율 결과가 화면에 고정되어 있는지 추적하는 플래그
 
 let audioContext, analyser, microphone, dataArray;
 
@@ -516,7 +503,7 @@ let audioContext, analyser, microphone, dataArray;
 function setDifficulty(level) {
   if (level === 'easy')   { threshold = 0.3; currentStageMode = 'easy'; }
   else if (level === 'normal') { threshold = 0.5; currentStageMode = 'normal'; }
-  else                    { threshold = 0.7; currentStageMode = 'hard'; }
+  else                     { threshold = 0.7; currentStageMode = 'hard'; }
   
   document.getElementById('levelLabel').textContent =
     'Level: ' + level.toUpperCase() + ' (' + (threshold * 100) + '% match required)';
@@ -532,12 +519,17 @@ function render() {
       '<div class="sentence" id="sent-' + i + '">' + (i + 1) + '. ' + s + '</div>'
     ).join('');
   currentIndex = 0;
+  tomatoCount = 0; 
+  hasResultDisplay = false;
   highlightCurrent();
+  updateTomatoes();
   setResultBox('neutral', 'Ready! Tap the button and read the highlighted sentence.');
 }
 
 function highlightCurrent() {
   const round = document.getElementById('round').value;
+  if(currentIndex > passages[round].length) return;
+  
   passages[round].forEach((_, i) => {
     const el = document.getElementById('sent-' + i);
     if (!el) return;
@@ -545,13 +537,25 @@ function highlightCurrent() {
   });
 }
 
-// ── Similarity ───────────────────────────────────────────────
-function similarity(a, b) {
-  const aw = a.split(' ');
-  const bw = b.split(' ');
+// ── Similarity (단어 유사도 매칭 알고리즘) ───────────────────
+function similarity(textA, textB) {
+  const clean = text => text.toLowerCase().replace(/[.,!?]/g, '').trim().split(/\s+/).filter(w => w);
+  
+  const wordsA = clean(textA);
+  const wordsB = clean(textB);
+  
+  if (wordsA.length === 0 || wordsB.length === 0) return 0;
+  
   let match = 0;
-  aw.forEach(w => { if (bw.includes(w)) match++; });
-  return match / aw.length;
+  wordsA.forEach((word, idx) => { 
+    if (wordsB[idx] === word) {
+      match += 1; 
+    } else if (wordsB.includes(word)) {
+      match += 0.5; 
+    }
+  });
+  
+  return Math.min(1, match / wordsA.length);
 }
 
 // ── Result box helper ────────────────────────────────────────
@@ -565,7 +569,8 @@ function setResultBox(state, text) {
 
 // ── Tomato icons ─────────────────────────────────────────────
 function updateTomatoes() {
-  const total = passages[document.getElementById('round').value].length;
+  const round = document.getElementById('round').value;
+  const total = passages[round].length;
   const icons = document.getElementById('tomatoIcons');
   icons.innerHTML = '';
 
@@ -594,7 +599,6 @@ function setRecBtn(state) {
     isListening = true;
   } else if (state === 'disabled') {
     btn.classList.add('disabled');
-    label.textContent = 'Done';
   }
 }
 
@@ -608,6 +612,8 @@ async function toggleRec() {
       recognition.start();
       setRecBtn('listening');
       setResultBox('neutral', 'Listening... speak now!');
+      hasResultDisplay = false; // 새로운 녹음이 시작되면 플래그 초기화
+      document.getElementById('skipBtn').style.display = 'none';
     } catch (e) {
       isListening = false;
       try { recognition.stop(); } catch {}
@@ -621,7 +627,6 @@ async function toggleRec() {
 
 // ── Speech recognition setup ─────────────────────────────────
 document.getElementById('round').addEventListener('change', render);
-render();
 
 if (window.SpeechRecognition || window.webkitSpeechRecognition) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -631,28 +636,30 @@ if (window.SpeechRecognition || window.webkitSpeechRecognition) {
   recognition.maxAlternatives = 1;
 
   recognition.onresult = function(e) {
-    const spoken = e.results[0][0].transcript.toLowerCase().replace(/[.,!?]/g, '').trim();
+    const spoken = e.results[0][0].transcript;
     const round  = document.getElementById('round').value;
-    const success = spoken.length > 0;
+    const targetSentence = passages[round][currentIndex];
+    
+    const matchScore = similarity(targetSentence, spoken);
+    const scorePercent = Math.round(matchScore * 100);
+    hasResultDisplay = true; // 강제로 일치율을 화면에 고정시킴
 
-    document.getElementById('skipBtn').style.display = 'none';
-
-    if (success) {
+    if (matchScore >= threshold) {
       document.getElementById('sent-' + currentIndex).className = 'sentence done';
       currentIndex++;
       tomatoCount++;
       updateTomatoes();
       highlightCurrent();
-      recognition.stop();
-      isListening = false;
 
       if (currentIndex >= passages[round].length) {
         handleRoundOrMasterComplete(round);
       } else {
-        setResultBox('correct', 'Great job! 🍅 You earned a tomato!');
+        setResultBox('correct', 'Great job! 🍅 일치율: ' + scorePercent + '% 통과! 다음 문장을 읽어보세요.');
       }
+      document.getElementById('skipBtn').style.display = 'none';
     } else {
-      setResultBox('retry', 'Try again! Read a little louder.');
+      setResultBox('retry', '다시 도전해봐요! ❌ (내 일치율: ' + scorePercent + '% / 목표: ' + (threshold * 100) + '%)');
+      document.getElementById('skipBtn').style.display = 'inline-block'; // 틀렸을 때만 찬스 버튼 노출
     }
     isListening = false; 
     setRecBtn('idle');
@@ -661,52 +668,46 @@ if (window.SpeechRecognition || window.webkitSpeechRecognition) {
   recognition.onend = function() {
     isListening = false;
     setRecBtn('idle');
-    if (currentIndex < passages[document.getElementById('round').value].length) {
-      document.getElementById('skipBtn').style.display = 'inline-block';
+    
+    // 핵심 수정: 말하기 성공/실패 결과 창이 이미 떠 있다면 안내 메시지로 덮어쓰지 않고 퍼센트를 유지시킵니다.
+    if (!hasResultDisplay) {
+      const round = document.getElementById('round').value;
+      if (currentIndex < passages[round].length) {
+        setResultBox('neutral', '소리가 전달되지 않았어요. Speak 버튼을 누르고 다시 읽어주세요!');
+        document.getElementById('skipBtn').style.display = 'inline-block';
+      }
     }
   };
 
   recognition.onerror = function(e) {
+    hasResultDisplay = true;
     if (document.getElementById('skipBtn')) document.getElementById('skipBtn').style.display = 'inline-block';
     isListening = false;
     try { recognition.stop(); } catch {}
     setRecBtn('idle');
     if (e.error !== 'no-speech') {
-      setResultBox('retry', 'Mic error: ' + e.error + '. Please try again.');
+      setResultBox('retry', '오류 발생: ' + e.error + '. 다시 시도해 주세요.');
     } else {
-      setResultBox('neutral', 'No speech detected. Tap Speak and try again!');
+      setResultBox('neutral', '소리가 들리지 않았어요. Speak 버튼을 누르고 다시 읽어주세요!');
     }
   };
 }
 
+// 선생님용 패스 버튼 (도저히 통과 못 할 때 강제 패스용)
 function manualPass() {
   const round = document.getElementById('round').value;
   document.getElementById('skipBtn').style.display = 'none';
   document.getElementById('sent-' + currentIndex).className = 'sentence done';
   currentIndex++;
   tomatoCount++;
+  hasResultDisplay = false;
   updateTomatoes();
   highlightCurrent();
 
   if (currentIndex >= passages[round].length) {
     handleRoundOrMasterComplete(round);
   } else {
-    setResultBox('correct', 'Great job! 🍅 You earned a tomato!');
-  }
-}
-
-function nextSentence() {
-  const round = document.getElementById('round').value;
-  if (currentIndex < passages[round].length) {
-    document.getElementById('sent-' + currentIndex).className = 'sentence done';
-    currentIndex++;
-    tomatoCount++;
-    updateTomatoes();
-    highlightCurrent();
-
-    if (currentIndex >= passages[round].length) {
-      handleRoundOrMasterComplete(round);
-    }
+    setResultBox('correct', '선생님 찬스 성공! 🍅 다음 문장으로 갑니다.');
   }
 }
 
@@ -719,27 +720,26 @@ function handleRoundOrMasterComplete(round) {
     sel.options[1].text = 'Round 2 - Mai (Unlocked)';
     document.getElementById('bannerRound1').classList.add('show');
     setRecBtn('disabled');
-    setResultBox('correct', 'Round 1 complete! Great job!');
+    setResultBox('correct', 'Round 1 완벽 통과! 대단해요!');
   } else {
-    // Round 2 (Mai)까지 다 깬 상황 (즉, 해당 난이도 마스터)
     setRecBtn('disabled');
     const banner = document.getElementById('bannerMaster');
     
     if (currentStageMode === 'easy') {
       document.getElementById('masterTitle').textContent = "Easy Master! 👑";
       document.getElementById('masterSub').textContent = "Level Up to NORMAL Mode!";
-      document.getElementById('masterDesc').textContent = "You crushed Easy mode! Ready to practice with Normal mode?";
+      document.getElementById('masterDesc').textContent = "Easy 모드를 완벽히 마스터했습니다! 이제 50%의 정확도가 필요한 Normal 모드에 도전해볼까요?";
       setResultBox('correct', 'Level Up! Ready for Normal Mode!');
     } else if (currentStageMode === 'normal') {
       document.getElementById('masterTitle').textContent = "Normal Master! 🔥";
       document.getElementById('masterSub').textContent = "Level Up to HARD Mode!";
-      document.getElementById('masterDesc').textContent = "Fantastic! You are ready for the Ultimate Hard Mode!";
+      document.getElementById('masterDesc').textContent = "대단해요! 이제 70%의 정확도가 필요한 원어민 수준의 Hard 모드만 남았습니다!";
       setResultBox('correct', 'Level Up! Ready for Hard Mode!');
     } else if (currentStageMode === 'hard') {
       document.getElementById('masterTitle').textContent = "🍅 Tomato Ultimate Master! 🍅";
       document.getElementById('masterSub').textContent = "🎉 축하합니다! 모든 난이도를 통과했습니다! 🎉";
       document.getElementById('masterDesc').textContent = "Easy, Normal, Hard 모드까지 완벽하게 정복해 최고의 토마토 코치가 되었어요!";
-      document.getElementById('masterBtn').style.display = 'none'; // 마지막엔 버튼 감춤
+      document.getElementById('masterBtn').style.display = 'none';
       setResultBox('correct', '★ Perfect Victory! All Stages Cleared! ★');
     }
     banner.classList.add('show');
@@ -750,7 +750,9 @@ function handleRoundOrMasterComplete(round) {
 function goRound2() {
   document.getElementById('round').value = 'mai';
   document.getElementById('bannerRound1').classList.remove('show');
+  currentIndex = 0;
   tomatoCount = 0;
+  hasResultDisplay = false;
   updateTomatoes();
   render();
   setRecBtn('idle');
@@ -766,10 +768,11 @@ function handleMasterAction() {
     setDifficulty('hard');
   }
 
-  // 게임 상태 첫 라운드로 초기화
   document.getElementById('round').value = 'joe';
+  currentIndex = 0;
   tomatoCount = 0;
   round1Complete = false;
+  hasResultDisplay = false;
   
   const sel = document.getElementById('round');
   sel.options[1].disabled = true;
@@ -782,14 +785,18 @@ function handleMasterAction() {
 
 // ── Voice visualizer ─────────────────────────────────────────
 async function setupVoice() {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  audioContext = new AudioContext();
-  analyser = audioContext.createAnalyser();
-  microphone = audioContext.createMediaStreamSource(stream);
-  microphone.connect(analyser);
-  analyser.fftSize = 256;
-  dataArray = new Uint8Array(analyser.frequencyBinCount);
-  drawVoice();
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioContext.createAnalyser();
+    microphone = audioContext.createMediaStreamSource(stream);
+    microphone.connect(analyser);
+    analyser.fftSize = 256;
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+    drawVoice();
+  } catch(e) {
+    console.error("마이크 접근 실패:", e);
+  }
 }
 
 function drawVoice() {
@@ -818,7 +825,8 @@ function drawVoice() {
   ctx.stroke();
 }
 
-updateTomatoes();
+// 초기 실행
+render();
 </script>
 </body>
 </html>
